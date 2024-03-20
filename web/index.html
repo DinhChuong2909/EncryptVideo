@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload</title>
+</head>
+<body>
+    <h1>Upload a Video</h1>
+        <form  method="post" enctype="multipart/form-data" id="videoForm">
+            <div id="drop-area">
+                <input name="video-upload" class="d-none upload" type="file" id="video-upload"/>
+            </div>
+            <button type="submit" class="btn btn-primary" id="submit-video">Create Video</button>
+        </form>
+
+    <video playsinline controls id="videoEl">
+
+    </video>
+
+    <script>
+        const videoEl = document.getElementById('videoEl');
+        const videoUpload = document.getElementById('video-upload');
+        const videoForm = document.querySelector('videoForm');
+        videoUpload.addEventListener('change', function(event) {
+            if(event.target.files && event.target.files[0]) {
+                videoEl.src = URL.createObjectURL(event.target.files[0]);
+                console.log(videoEl.src);
+                videoEl.load();
+            }
+        });
+
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.plyr.io/3.3.21/plyr.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.5.4/umd/popper.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
