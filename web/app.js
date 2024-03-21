@@ -66,9 +66,9 @@ const getFileName = (url) => {
 function submitVideoEncrypt() {
 
   var formData = {
-    videoPath: "https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/footage/suburbia-aerial.mp4",
+    videoPath: "suburbia-aerial.mp4",
     encryptionKey: "abbas1234",
-    outputPath: getFileName("https://shotstack-assets.s3-ap-southeast-2.amazonaws.com/footage/suburbia-aerial.mp4"),
+    outputPath: "suburbia-aerial.mp4"
   };
 
   $.ajax({
@@ -92,9 +92,10 @@ function submitVideoEncrypt() {
     });
 }
 
+
 function submitVideoDecrypt() {
   var formData = {
-    encryptedVideo: "D:/Code/Web/EncryptVideo/api/src/suburbia-aerial.encrypted",
+    encryptedVideo: "suburbia-aerial.encrypted",
     encryptionKey: "abbas1234",
     outputPath: "suburbia-aerial.mp4",
   };

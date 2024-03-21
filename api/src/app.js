@@ -74,9 +74,13 @@ const multerUpload = multer({storage: storage});
 
 app.post("/encrypt", async (req, res) => {
   try {
-      const videoPath = req.body.videoPath; 
+      const encryptPath =  path.join(__dirname, "../encrypt/");
+      console.log(encryptPath);
+      const decryptPath =  path.join(__dirname, "../decrypt/");
+      console.log(decryptPath);
+      const videoPath = decryptPath + req.body.videoPath; 
       const encryptionKey = req.body.encryptionKey;
-      const outputPath = req.body.outputPath;
+      const outputPath = encryptPath + req.body.outputPath;
 
       const result = await videoEncryptor.encryptVideo(videoPath, encryptionKey, outputPath);
       
@@ -89,35 +93,33 @@ app.post("/encrypt", async (req, res) => {
   }
 });
 
-function decryptedVideo(encryptedFilePath, key, outputPath) {
-    key = "abbas1234";
-    outputPath = "decrypted-video";
-
-    videoEncryptor.decryptVideo(encryptedFilePath, key, outputPath);
-}
-
 app.post("/decrypt", async (req, res) => {
     try {
-        const encryptedVideo = req.body.encryptedVideo;
-        const encryptionKey = req.body.encryptionKey;
-        const outputPath = req.body.outputPath;
+      const encryptPath =  path.join(__dirname, "../encrypt/");
+      console.log(encryptPath);
+      const decryptPath =  path.join(__dirname, "../decrypt/");
+      console.log(decryptPath);
+      const encryptedVideo = encryptPath +  req.body.encryptedVideo;
+      console.log(encryptedVideo);
+      const encryptionKey = req.body.encryptionKey;
+      const outputPath = decryptPath + req.body.outputPath;
 
-        const result = await videoEncryptor.decryptVideo(encryptedVideo, encryptionKey, outputPath);
-        
-        res.header("Access-Control-Allow-Origin", "*");
-        res.status(200);
-        res.send({ status: "success", message: "OK" , data: result});
+      const result = await videoEncryptor.decryptVideo(encryptedVideo, encryptionKey, outputPath);
+      
+      res.header("Access-Control-Allow-Origin", "*");
+      res.status(200);
+      res.send({ status: "success", message: "OK" , data: result});
     } catch (err) {
-        console.log(err);
-        res.header("Access-Control-Allow-Origin", "*");
-        res.status(400);
-        res.send({ status: "fail", message: "bad request", data: err });
+      console.log(err);
+      res.header("Access-Control-Allow-Origin", "*");
+      res.status(400);
+      res.send({ status: "fail", message: "bad request", data: err });
     }
 });
 
 
-app.listen(3000, () =>
+app.listen(3000, () =>{
   console.log(
     "Server running...\n\nOpen http://localhost:3000 in your browser\n"
   )
-);
+});
