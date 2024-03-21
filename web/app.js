@@ -92,6 +92,19 @@ function submitVideoEncrypt() {
     });
 }
 
+function getEncryptionKey() {
+  $.ajax({
+    type: "POST",
+    url: apiUrl + "create-key",
+    crossDomain: true,
+  })
+    .done(function (response) {
+      console.log(response);
+    })
+    .fail(function (error) {
+      console.log("error");
+    });
+}
 
 function submitVideoDecrypt() {
   var formData = {
@@ -122,6 +135,7 @@ function submitVideoDecrypt() {
 
 $(document).ready(function () {
   $("form").submit(function (event) {
+    getEncryptionKey();
     submitVideoDecrypt();
     event.preventDefault();
   });

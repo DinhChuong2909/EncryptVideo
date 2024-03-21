@@ -1,91 +1,55 @@
-const LitJsSdk = require("lit-js-sdk");
-const ethConnect = require("@lit-protocol/auth-browser");
-const ethers = require("ethers");
+const LitJsSdk = require('@lit-protocol/lit-node-client-nodejs');
+const { ethers } = require("ethers");
+const siwe = require('siwe');
 
-// Khởi tạo Lit Node Client
-const litNodeClient = new LitJsSdk.LitNodeClient({ litNetwork: "serrano" });
-
-// Kết nối đến Lit node
-async function connectToLitNode() {
-  try {
-    await litNodeClient.connect();
-    console.log("Đã kết nối thành công với Lit node!");
-  } catch (error) {
-    console.error("Lỗi khi kết nối với Lit node:", error);
-  }
-}
-
-// Lấy AuthSig từ MetaMask hoặc ví trình duyệt khác
-async function getAuthSig() {
-  try {
-    authSig = await LitJsSdk.checkAndSignAuthMessage({ chain: "ethereum" });
-    return authSig;
-  } catch (error) {
-    console.error("Lỗi khi lấy AuthSig:", error);
-    return null;
-  }
-}
-
-// Tạo cặp khóa mới
-async function generateKeyPair() {
-  try {
-    const keyPair = await litNodeClient.executeJs({
-      code: `
-        const keyPair = Lit.Crypto.generateKeyPair();
-        keyPair;
-      `,
+async function main() {
+  // Initialize LitNodeClient
+  const litNodeClient = new LitJsSdk.LitNodeClientNodeJs({
+        alertWhenUnauthorized: false,
+        litNetwork: 'cayenne',
     });
-    console.log("Đã tạo cặp khóa:", keyPair);
-  } catch (error) {
-    console.error("Lỗi khi tạo cặp khóa:", error);
-  }
-}
+  await litNodeClient.connect();
 
-// Lấy danh sách các cặp khóa hiện có
-async function getExistingKeyPairs() {
-  try {
-    const existingKeys = await litNodeClient.executeJs({
-      code: `
-        const existingKeys = Lit.Crypto.getExistingKeys();
-        existingKeys;
-      `,
-    });
-    console.log("Danh sách các cặp khóa hiện có:", existingKeys);
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách các cặp khóa:", error);
-  }
-}
+  let nonce = litNodeClient.getLatestBlockhash();
 
-const jwt = require("jsonwebtoken");
+  // Initialize the signer
+  const wallet = new ethers.Wallet('03e2d7915cc58f7dca153a43a7231c6ac8529a51ae0e74c2ddf496e4eb043ac3');
+  const address = await wallet.getAddress();
 
-// Hàm xác minh AuthSig
-function verifyAuthSig(authSig) {
-  try {
-    // Thay thế "process.env.JWTPRIVATEKEY" bằng khóa riêng của bạn
-    const decoded = jwt.verify(authSig, 'eyJhbGciOiJCTFMxMi0zODEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJMSVQiLCJzdWIiOiIweGRiZDM2MGYzMDA5N2ZiNmQ5MzhkY2M4YjdiNjI4NTRiMzYxNjBiNDUiLCJjaGFpbiI6ImZhbnRvbSIsImlhdCI6MTYyODAzMTM1OCwiZXhwIjoxNjI4MDc0NTU4LCJiYXNlVXJsIjoiaHR0cHM6Ly9teS1keW5hbWljLWNvbnRlbnQtc2VydmVyLmNvbSIsInBhdGgiOiIvYV9wYXRoLmh0bWwiLCJvcmdJZCI6IiJ9.lX_aBSgGVYWd2FL6elRHoPJ2nab0IkmmX600cwZPCyK_SazZ-pzBUGDDQ0clthPVAtoS7roHg14xpEJlcSJUZBA7VTlPiDCOrkie_Hmulj765qS44t3kxAYduLhNQ-VN');
-    console.log("AuthSig hợp lệ. Thông tin người dùng:", decoded);
-    return true;
-  } catch (error) {
-    console.error("AuthSig không hợp lệ:", error.message);
-    return false;
-  }
-}
+  // Craft the SIWE message
+  const domain = 'localhost';
+  const origin = 'https://localhost/login';
+  const statement =
+    'This is a test statement.  You can put anything you want here.';
+    
+  // expiration time in ISO 8601 format.  This is 7 days in the future, calculated in milliseconds
+  const expirationTime = new Date(
+    Date.now() + 1000 * 60 * 60 * 24 * 7 * 10000
+  ).toISOString();
+  
+  const siweMessage = new siwe.SiweMessage({
+    domain,
+    address: address,
+    statement,
+    uri: origin,
+    version: '1',
+    chainId: 1,
+    nonce,
+    expirationTime,
+  });
+  const messageToSign = siweMessage.prepareMessage();
+  
+  // Sign the message and format the authSig
+  const signature = await wallet.signMessage(messageToSign);
 
-// Gọi hàm xác minh
+  const authSig = {
+    sig: signature,
+    derivedVia: 'web3.eth.personal.sign',
+    signedMessage: messageToSign,
+    address: address,
+  };
 
-
-// Chạy các hàm ví dụ
-const main = async () => {
-  await connectToLitNode();
-  const address = "0xAC62315338662a95B38c9B89733baF58163BFd32"; 
-  await verifyAuthSig(address);
-  const authSig = await getAuthSig();
-  if (authSig) {
-    generateKeyPair();
-    getExistingKeyPairs();
-  } else {
-    console.error("Không thể lấy AuthSig. Vui lòng xác thực trước.");
-  }
+  console.log('Done!')
 }
 
 main();
