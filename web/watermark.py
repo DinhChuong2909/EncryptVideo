@@ -31,116 +31,76 @@
 # In each of the cube one bit is used as side information bit to 
 # verify whether the cube contains watermarking bits.
 
-
-import numpy as np
 import cv2
+import numpy as np
 import pywt
 from sklearn.decomposition import PCA
 
-# Function to convert RGB to YUV
-def rgb_to_yuv(rgb_frame):
-    yuv_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2YUV)
-    return yuv_frame
+# Load your video file (replace with your actual video file)
+video_path = 'suburbia-aerial.mp4'
 
-# Function to group frames, divide into blocks, extract DWT components, and apply PCA
-def process_frames(frames, k, m):
-    grouped_frames = [frames[i:i+k] for i in range(0, len(frames), k)]
-    processed_blocks = []
-    for frame_group in grouped_frames:
-        for frame in frame_group:
-            blocks = divide_into_blocks(frame)
-            for block in blocks:
-                dwt_components = extract_dwt_components(block, m)
-                if len(dwt_components) == m * m:  # Ensure valid number of DWT coefficients
-                    pca_components = apply_pca(dwt_components)
-                    processed_blocks.append(pca_components)
-    return processed_blocks
+# Read the video
+cap = cv2.VideoCapture(video_path)
 
-# Function to divide a frame into non-overlapping blocks
-def divide_into_blocks(frame):
-    block_size = 8  # Assuming block size of 8x8
-    blocks = []
-    h, w, _ = frame.shape
-    for y in range(0, h, block_size):
-        for x in range(0, w, block_size):
-            block = frame[y:y+block_size, x:x+block_size]
-            blocks.append(block)
-    return blocks
+# Define parameters
+k = 5  # Number of frames to group together
+m = 3  # Number of DWT components
+strength_factor = 0.5  # Strength factor for embedding
 
-# Function to extract DWT components from each block
-def extract_dwt_components(block, m):
-    coeffs = pywt.dwt2(block, 'haar')  # Applying 2D DWT using Haar wavelet
-    return coeffs[0][:m, :m].flatten()
+# Initialize the video writer
+fourcc = cv2.VideoWriter_fourcc(*'XVID')
+output_video_path = 'watermarked_video.avi'
+fps = int(cap.get(cv2.CAP_PROP_FPS))
+frame_size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size)
 
-# Function to apply PCA on matrix A
-def apply_pca(matrix_a):
-    pca = PCA()
-    pca.fit(matrix_a.reshape(-1, len(matrix_a)))  # Reshape matrix to ensure each row represents a sample
-    return pca.components_
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-# Function to calculate supporting bit S
-def calculate_supporting_bit(eigen_vector):
-    central_value = eigen_vector[len(eigen_vector)//2]
-    mean_other_values = np.mean(np.delete(eigen_vector, len(eigen_vector)//2))
-    difference = central_value - mean_other_values
-    supporting_bit = 1 if difference >= 0 else -1
-    return supporting_bit
+    # Convert frame from RGB to YUV
+    frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
 
-# Function to embed watermarking bit based on specified conditions
-def embed_watermarking_bit(eigen_vector, supporting_bit, watermarking_bit, strength_factor):
-    center_index = len(eigen_vector) // 2
-    if supporting_bit == watermarking_bit:
-        if watermarking_bit == 1:
-            eigen_vector[center_index] *= strength_factor
-        else:
-            eigen_vector[center_index] /= strength_factor
+    # Apply DWT (using Haar wavelet as an example)
+    coeffs = pywt.dwt2(frame_yuv[:, :, 0], 'haar')
 
-# Function to encode video with watermarking
-def encode_video(input_path, output_path, k, m, strength_factor):
-    content_video = cv2.VideoCapture(input_path)
-    frame_width = int(content_video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(content_video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(content_video.get(cv2.CAP_PROP_FPS))
-    output_video = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_width, frame_height))
+    # Extract approximation coefficients (LL) and detail coefficients (LH, HL, HH)
+    cA, (cH, cV, cD) = coeffs
 
-    frames = []
-    while True:
-        ret, frame = content_video.read()
-        if not ret:
-            break
-        yuv_frame = rgb_to_yuv(frame)
-        frames.append(yuv_frame)
-    processed_blocks = process_frames(frames, k, m)
-    # Assuming watermarking bit is determined externally
-    watermarking_bit = 1
-    for block in processed_blocks:
-        for eigen_vector in block:
-            supporting_bit = calculate_supporting_bit(eigen_vector)
-            embed_watermarking_bit(eigen_vector, supporting_bit, watermarking_bit, strength_factor)
-    # Reconstruct frames from processed blocks and write to output video
-    for i, frame_blocks in enumerate(processed_blocks):
-        reconstructed_frame = np.zeros_like(frames[i])
-        for j, block in enumerate(frame_blocks):
-            row_start = (j // (frame_width // 8)) * 8
-            row_end = row_start + 8
-            col_start = (j % (frame_width // 8)) * 8
-            col_end = col_start + 8
-            reconstructed_block = reconstruct_block(block).reshape((8, 8, 3))
-            reconstructed_frame[row_start:row_end, col_start:col_end, :] = reconstructed_block
-        output_video.write(cv2.cvtColor(reconstructed_frame, cv2.COLOR_YUV2BGR))
-        
-    content_video.release()
-    output_video.release()
+    # Calculate supporting bit S (example: based on mean)
+    central_value = cA[0, 0]
+    mean_other_values = np.mean(cA[0, 1:])
+    S = 1 if central_value - mean_other_values >= 0 else -1
 
-# Function to reconstruct a block from DWT coefficients
-def reconstruct_block(dwt_coefficients):
-    reconstructed_block = np.zeros((8, 8, 3))
-    reconstructed_block[:, :, 0] = pywt.idwt2((dwt_coefficients[:64]).reshape((8, 8)), 'haar')
-    reconstructed_block[:, :, 1] = pywt.idwt2((dwt_coefficients[64:128]).reshape((8, 8)), 'haar')
-    reconstructed_block[:, :, 2] = pywt.idwt2((dwt_coefficients[128:192]).reshape((8, 8)), 'haar')
-    return reconstructed_block
+    # Watermarking conditions (example: multiply by strength factor)
+    watermarking_bit = 1  # Example: +1 or -1
+    selected_coefficient = cA[0, 0]  # Example: center of the block
 
-# Example usage
-encode_video('suburbia-aerial.mp4', 'watermarked_video.mp4', k=10, m=3, strength_factor=1.5)
+    if watermarking_bit == 1:
+        selected_coefficient *= strength_factor
+    elif watermarking_bit == -1:
+        selected_coefficient *= 1 / strength_factor
 
-# Xu ly lau qua
+    # Update the approximation coefficients with the watermarked coefficient
+    cA[0, 0] = selected_coefficient
+
+    # Perform inverse DWT to get the watermarked frame
+    frame_yuv[:, :, 0] = pywt.idwt2((cA, (cH, cV, cD)), 'haar')
+
+    # Convert back to BGR for display (optional)
+    frame_watermarked = cv2.cvtColor(frame_yuv, cv2.COLOR_YUV2BGR)
+
+    # Write the watermarked frame to the output video
+    out.write(frame_watermarked)
+
+    # Display the watermarked frame (optional)
+    cv2.imshow('Watermarked Video', frame_watermarked)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+out.release()
+cv2.destroyAllWindows()
+
+# The output size is too large + video length is longer
