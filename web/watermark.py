@@ -113,111 +113,111 @@ import numpy as np
 import pywt
 from sklearn.decomposition import PCA
 
-def read_video(video_path):
-    cap = cv2.VideoCapture(video_path)
-    return cap
+# def read_video(video_path):
+#     cap = cv2.VideoCapture(video_path)
+#     return cap
 
-def initialize_video_writer(output_video_path, fps, frame_size):
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size)
-    return out
+# def initialize_video_writer(output_video_path, fps, frame_size):
+#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#     out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size)
+#     return out
 
-def apply_dwt(frame_yuv, block_size):
-    # Perform PCA on matrix A to generate matrix B
-    # Each row of matrix B corresponds to an eigenvector
-    # Return matrix B
-    coeffs = pywt.dwt2(frame_yuv[:, :, 0], 'haar')
-    cA, (_, _, _) = coeffs
-    return cA
+# def apply_dwt(frame_yuv, block_size):
+#     # Perform PCA on matrix A to generate matrix B
+#     # Each row of matrix B corresponds to an eigenvector
+#     # Return matrix B
+#     coeffs = pywt.dwt2(frame_yuv[:, :, 0], 'haar')
+#     cA, (_, _, _) = coeffs
+#     return cA
 
-def apply_pca(matrix_A):
-    # Center the data (subtract mean from each column)
-    centered_data = matrix_A - np.mean(matrix_A, axis=0)
+# def apply_pca(matrix_A):
+#     # Center the data (subtract mean from each column)
+#     centered_data = matrix_A - np.mean(matrix_A, axis=0)
 
-    # Compute the covariance matrix
-    covariance_matrix = np.cov(centered_data, rowvar=False)
+#     # Compute the covariance matrix
+#     covariance_matrix = np.cov(centered_data, rowvar=False)
 
-    # Perform eigenvalue decomposition
-    eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+#     # Perform eigenvalue decomposition
+#     eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
 
-    # Sort eigenvectors by eigenvalues (descending order)
-    sorted_indices = np.argsort(eigenvalues)[::-1]
-    sorted_eigenvectors = eigenvectors[:, sorted_indices]
+#     # Sort eigenvectors by eigenvalues (descending order)
+#     sorted_indices = np.argsort(eigenvalues)[::-1]
+#     sorted_eigenvectors = eigenvectors[:, sorted_indices]
 
-    # Keep the top k eigenvectors (where k is the desired dimensionality)
-    k = 2  # Example: Keep the top 2 eigenvectors
-    matrix_B = sorted_eigenvectors[:, :k]
+#     # Keep the top k eigenvectors (where k is the desired dimensionality)
+#     k = 2  # Example: Keep the top 2 eigenvectors
+#     matrix_B = sorted_eigenvectors[:, :k]
 
-    return matrix_B
+#     return matrix_B
 
-def calculate_supporting_bit(matrix_B):
-    # Calculate the difference between consecutive rows
-    row_differences = np.diff(matrix_B, axis=0)
+# def calculate_supporting_bit(matrix_B):
+#     # Calculate the difference between consecutive rows
+#     row_differences = np.diff(matrix_B, axis=0)
 
-    # Determine the supporting bit
-    supporting_bit = np.where(row_differences >= 0, 1, -1)
+#     # Determine the supporting bit
+#     supporting_bit = np.where(row_differences >= 0, 1, -1)
 
-    return supporting_bit
+#     return supporting_bit
 
-def embed_watermark(selected_coefficient, watermarking_bit, strength_factor, supporting_bit):
-    # Check if all elements in the arrays are equal
-    if np.array_equal(watermarking_bit, supporting_bit):
-        if watermarking_bit == 1:
-            selected_coefficient *= strength_factor
-        elif watermarking_bit == -1:
-            selected_coefficient *= (1 / strength_factor)
+# def embed_watermark(selected_coefficient, watermarking_bit, strength_factor, supporting_bit):
+#     # Check if all elements in the arrays are equal
+#     if np.array_equal(watermarking_bit, supporting_bit):
+#         if watermarking_bit == 1:
+#             selected_coefficient *= strength_factor
+#         elif watermarking_bit == -1:
+#             selected_coefficient *= (1 / strength_factor)
     
-    return selected_coefficient
+#     return selected_coefficient
 
-def encode():
-    video_path = 'suburbia-aerial.mp4'
-    cap = read_video(video_path)
+# def encode():
+#     video_path = 'suburbia-aerial.mp4'
+#     cap = read_video(video_path)
 
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    frame_size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+#     fps = int(cap.get(cv2.CAP_PROP_FPS))
+#     frame_size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
-    out = initialize_video_writer('watermarked_video.mp4', fps, frame_size)
+#     out = initialize_video_writer('watermarked_video.mp4', fps, frame_size)
 
-    block_size = 4
-    strength_factor = 0.5
-    watermarking_bit = 1
+#     block_size = 4
+#     strength_factor = 0.5
+#     watermarking_bit = 1
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+#     while True:
+#         ret, frame = cap.read()
+#         if not ret:
+#             break
 
-        frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
-        selected_coefficient = apply_dwt(frame_yuv, block_size)
+#         frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+#         selected_coefficient = apply_dwt(frame_yuv, block_size)
 
-        # Apply PCA 
-        matrix_B = apply_pca(selected_coefficient)
-        # print(matrix_B)
+#         # Apply PCA 
+#         matrix_B = apply_pca(selected_coefficient)
+#         # print(matrix_B)
 
-        # Calculate supporting bit S 
-        supporting_bit = calculate_supporting_bit(matrix_B)
-        # print(supporting_bit)
+#         # Calculate supporting bit S 
+#         supporting_bit = calculate_supporting_bit(matrix_B)
+#         # print(supporting_bit)
 
-        # Apply watermarking conditions
-        modified_coefficient = embed_watermark(selected_coefficient, watermarking_bit, strength_factor, supporting_bit)
+#         # Apply watermarking conditions
+#         modified_coefficient = embed_watermark(selected_coefficient, watermarking_bit, strength_factor, supporting_bit)
 
-        modified_coefficient_resized = cv2.resize(modified_coefficient, frame_size[::-1])
+#         modified_coefficient_resized = cv2.resize(modified_coefficient, frame_size[::-1])
 
-        # Update the frame with modified coefficients
-        frame_yuv[:, :, 0] = modified_coefficient_resized
+#         # Update the frame with modified coefficients
+#         frame_yuv[:, :, 0] = modified_coefficient_resized
 
-        # Convert back to BGR for writing to the output video
-        frame_watermarked = cv2.cvtColor(frame_yuv, cv2.COLOR_YUV2BGR)
+#         # Convert back to BGR for writing to the output video
+#         frame_watermarked = cv2.cvtColor(frame_yuv, cv2.COLOR_YUV2BGR)
 
-        # Resize the frame to the original size
-        frame_watermarked = cv2.resize(frame_watermarked, frame_size)
+#         # Resize the frame to the original size
+#         frame_watermarked = cv2.resize(frame_watermarked, frame_size)
 
-        # Write the watermarked frame to the output video
-        out.write(frame_watermarked)
+#         # Write the watermarked frame to the output video
+#         out.write(frame_watermarked)
 
-    cap.release()
-    out.release()
-    cv2.destroyAllWindows()
+#     cap.release()
+#     out.release()
+#     cv2.destroyAllWindows()
 
 # encode()
 
@@ -292,23 +292,12 @@ def encode_half():
     cv2.destroyAllWindows()
 
 
-def encode_full_process():
-    # Load your video file (replace with your actual video file)
-    video_path = 'suburbia-aerial.mp4'
-
+def encode_full_process(video_path, output_video_path, k=5, strength_factor=0.5, m=10, block_size=4, watermarking_bit=1):
     # Read the video
     cap = cv2.VideoCapture(video_path)
 
-    # Define parameters
-    k = 5  # Number of frames to group together
-    strength_factor = 0.5  # Strength factor for embedding
-    m = 10  # Number of eigenvectors for PCA (adjust as needed)
-    block_size = 4  # Size of the block for watermarking
-    watermarking_bit = 1  # Watermarking bit (+1 or -1)
-
     # Initialize the video writer
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    output_video_path = 'watermarked_video.mp4'
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     frame_size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
     out = cv2.VideoWriter(output_video_path, fourcc, fps, frame_size)
@@ -381,11 +370,70 @@ def encode_full_process():
     out.release()
     cv2.destroyAllWindows()
 
-# Example usage
+def decode_watermark(video_input_path, k=5, block_size=4, m=10):
+    # Read the video
+    cap = cv2.VideoCapture(video_input_path)
 
-encode_full_process()
+    watermarked_values = []
 
+    # Initialize a buffer to store frames
+    frame_buffer = []
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Convert frame from RGB to YUV
+        frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+
+        # Add the current frame to the buffer
+        frame_buffer.append(frame_yuv)
+
+        # Check if the buffer contains k frames
+        if len(frame_buffer) == k:
+            for i in range(k):
+                # Apply 2D DWT to each frame
+                cA, (cH, cV, cD) = pywt.dwt2(frame_buffer[i][:, :, 0], 'haar')
+
+                # Apply PCA to the approximation coefficients (cA)
+                pca = PCA(n_components=m)
+                matrix_B = pca.fit_transform(cA)
+
+                # Calculate Supporting Bit S (you'll need to define this based on your method)
+                center_value = matrix_B[block_size // 2, block_size // 2]
+                other_values_mean = np.mean(matrix_B)
+                supporting_bit = 1 if center_value - other_values_mean >= 0 else -1
+
+                # Extract the watermarked value based on the supporting bit
+                watermarked_value = 1 if supporting_bit == 1 else -1
+
+                # Store the watermarked value
+                watermarked_values.append(watermarked_value)
+            
+                # Continue with any other necessary steps for processing each frame
+                # For example:
+                # - Analyze the watermarked value
+                # - Store results or perform additional computations
+
+            # Clear the buffer after processing
+            frame_buffer.clear()
+
+    print(watermarked_values)
+
+    # Release resources
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+# Define parameters
 video_path = 'suburbia-aerial.mp4'
-output_video_path = 'decode_watermark.mp4'
-strength_factor = 0.5  # Adjust as needed
-# decode_watermarked_video(video_path, output_video_path)
+k = 5  # Number of frames to group together
+strength_factor = 0.5  # Strength factor for embedding
+m = 10  # Number of eigenvectors for PCA (adjust as needed)
+block_size = 4  # Size of the block for watermarking
+watermarking_bit = 1  # Watermarking bit (+1 or -1)
+
+encode_full_process(video_path, 'watermarked_video.mp4', k, strength_factor, m, block_size, watermarking_bit)
+decode_watermark('watermarked_video.mp4', k, block_size, m)
+
