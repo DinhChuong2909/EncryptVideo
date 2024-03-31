@@ -291,9 +291,8 @@ def encode_half():
     out.release()
     cv2.destroyAllWindows()
 
-
 def encode_full_process(video_path, output_video_path, k=5, strength_factor=0.5, m=10, block_size=4, watermarking_bit=1):
-    # Read the video
+   # Read the video
     cap = cv2.VideoCapture(video_path)
 
     # Initialize the video writer
@@ -332,6 +331,7 @@ def encode_full_process(video_path, output_video_path, k=5, strength_factor=0.5,
             # Select the first m eigenvectors
             matrix_B = eigenvectors[:, :m]
 
+            # Calculate supporting bit S
             center_value = matrix_B[block_size // 2, block_size // 2]
             other_values_mean = np.mean(matrix_B)
             supporting_bit = 1 if center_value - other_values_mean >= 0 else -1
@@ -339,16 +339,17 @@ def encode_full_process(video_path, output_video_path, k=5, strength_factor=0.5,
             # Apply watermarking to each frame in the buffer
             for i in range(k):
                 cA, (cH, cV, cD) = pywt.dwt2(frame_buffer[i][:, :, 0], 'haar')
-                
+
                 # Apply watermarking conditions
                 selected_coefficient = cA[::block_size, ::block_size]
-                if watermarking_bit == 1:
-                    selected_coefficient *= strength_factor
-                elif watermarking_bit == -1:
-                    selected_coefficient *= (1 / strength_factor)
-
                 if supporting_bit == watermarking_bit:
-                    cA[::block_size, ::block_size] = selected_coefficient
+                    if watermarking_bit == 1:
+                        selected_coefficient *= strength_factor
+                    elif watermarking_bit == -1:
+                        selected_coefficient *= (1 / strength_factor)
+
+                # Update the approximation coefficients with the watermarked coefficient
+                cA[::block_size, ::block_size] = selected_coefficient
 
                 # Perform inverse DWT to get the watermarked frame
                 frame_buffer[i][:, :, 0] = pywt.idwt2((cA, (cH, cV, cD)), 'haar')
@@ -400,7 +401,7 @@ def decode_watermark(video_input_path, k=5, block_size=4, m=10):
                 pca = PCA(n_components=m)
                 matrix_B = pca.fit_transform(cA)
 
-                # Calculate Supporting Bit S (you'll need to define this based on your method)
+                # Calculate Supporting Bit S
                 center_value = matrix_B[block_size // 2, block_size // 2]
                 other_values_mean = np.mean(matrix_B)
                 supporting_bit = 1 if center_value - other_values_mean >= 0 else -1
@@ -428,10 +429,10 @@ def decode_watermark(video_input_path, k=5, block_size=4, m=10):
 
 # Define parameters
 video_path = 'suburbia-aerial.mp4'
-k = 5  # Number of frames to group together
+k = 29  # Number of frames to group together
 strength_factor = 0.5  # Strength factor for embedding
-m = 10  # Number of eigenvectors for PCA (adjust as needed)
-block_size = 4  # Size of the block for watermarking
+m = 50  # Number of eigenvectors for PCA (adjust as needed)
+block_size = 50  # Size of the block for watermarking
 watermarking_bit = 1  # Watermarking bit (+1 or -1)
 
 encode_full_process(video_path, 'watermarked_video.mp4', k, strength_factor, m, block_size, watermarking_bit)
