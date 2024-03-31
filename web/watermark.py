@@ -343,15 +343,14 @@ def encode_full_process():
             # Select the first m eigenvectors
             matrix_B = eigenvectors[:, :m]
 
+            center_value = matrix_B[block_size // 2, block_size // 2]
+            other_values_mean = np.mean(matrix_B)
+            supporting_bit = 1 if center_value - other_values_mean >= 0 else -1
+
             # Apply watermarking to each frame in the buffer
             for i in range(k):
                 cA, (cH, cV, cD) = pywt.dwt2(frame_buffer[i][:, :, 0], 'haar')
-
-                # Calculate the supporting bit S
-                center_value = cA[block_size // 2, block_size // 2]
-                other_values_mean = np.mean(cA)
-                supporting_bit = 1 if center_value - other_values_mean >= 0 else -1
-
+                
                 # Apply watermarking conditions
                 selected_coefficient = cA[::block_size, ::block_size]
                 if watermarking_bit == 1:
