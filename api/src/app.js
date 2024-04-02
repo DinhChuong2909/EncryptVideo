@@ -17,11 +17,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname + "../../../web")));
 
-app.post("/upload", async (req, res) => {
+app.post("/watermark", async (req, res) => {
   try {
     const json = await edit.createJson(req.body);
-    console.log("ok");
     const render = await shotstack.submit(json);
+    console.log("ok");
 
     res.header("Access-Control-Allow-Origin", "*");
     res.status(201);
@@ -35,7 +35,7 @@ app.post("/upload", async (req, res) => {
   }
 });
 
-app.get("/upload/:renderId", async (req, res) => {
+app.get("/watermark/:renderId", async (req, res) => {
   try {
     const status = await shotstack.status(req.params.renderId);
     console.log("renderID ok");
@@ -66,6 +66,8 @@ app.get("/upload/:renderId", async (req, res) => {
 //         res.send({ status: 'fail', message: 'bad request', data: err.message });
 //     }
 // });
+
+/*
 
 const storage = multer.memoryStorage();
 
@@ -202,6 +204,8 @@ app.post("/create-key", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+*/
 
 app.listen(3000, () => {
   console.log(

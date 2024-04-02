@@ -1,5 +1,5 @@
 var apiUrl = "http://localhost:3000/";
-var apiEndpoint = apiUrl + "upload";
+var apiEndpoint = apiUrl + "watermark";
 var probeEndpoint = "https://api.shotstack.io/stage/probe/";
 var s3Bucket =
   "https://shotstack-demo-storage.s3-ap-southeast-2.amazonaws.com/";
@@ -59,6 +59,7 @@ function submitVideoEdit() {
     });
 }
 
+/*
 const getFileName = (url) => {
   return url.split("/").pop();
 }
@@ -132,11 +133,13 @@ function submitVideoDecrypt() {
       $("#submit-video").prop("disabled", false);
     });
 }
+*/
 
 $(document).ready(function () {
   $("form").submit(function (event) {
-    getEncryptionKey();
-    submitVideoDecrypt();
+    // getEncryptionKey();
+    // submitVideoDecrypt();
+    submitVideoEdit();
     event.preventDefault();
   });
 });
