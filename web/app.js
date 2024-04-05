@@ -135,11 +135,35 @@ function submitVideoDecrypt() {
 }
 */
 
+const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  console.log(file)
+
+  $.ajax({
+    type: "POST",
+    url: apiUrl + "uploadVideo",
+    data: formData,
+    processData: false,
+    contentType: false,
+    success: function (response) {
+      console.log(response);
+    },
+    error: function (error) {
+      console.log("error:", error);
+    }
+  });
+}
+
 $(document).ready(function () {
   $("form").submit(function (event) {
-    // getEncryptionKey();
-    // submitVideoDecrypt();
-    submitVideoEdit();
     event.preventDefault();
+
+    console.log("submitting video...");
+    
+    const videoUpload = document.getElementById("video-upload");
+    const file = videoUpload.files[0];
+    uploadImage(file); 
   });
 });

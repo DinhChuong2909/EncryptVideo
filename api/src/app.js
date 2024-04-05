@@ -2,15 +2,16 @@ require("dotenv").config();
 
 const express = require("express");
 const path = require("path");
-const uniqid = require("uniqid");
 const shotstack = require("./handler/shotstack/lib/shotstack");
 const edit = require("./handler/shotstack/lib/edit");
-const upload = require("./handler/upload/lib/upload");
 const multer = require("multer");
 
 const VideoEncryptor = require("video-encryptor");
 const videoEncryptor = new VideoEncryptor();
 
+
+const { watermarkVideo } = require("./watermark");
+const { uploadVideo } = require("./cloudinary");
 const app = express();
 
 app.use(express.json());
@@ -68,11 +69,6 @@ app.get("/watermark/:renderId", async (req, res) => {
 // });
 
 /*
-
-const storage = multer.memoryStorage();
-
-const multerUpload = multer({ storage: storage });
-
 app.post("/encrypt", async (req, res) => {
   try {
     const encryptPath = path.join(__dirname, "../encrypt/");
@@ -207,8 +203,46 @@ app.post("/create-key", async (req, res) => {
 
 */
 
+// Set up Multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Set destination folder for uploaded files
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname); // Set filename to the original name of the file
+  }
+});
+
+// Create multer instance with the configured storage
+const upload = multer({ storage: storage });
+
+
+app.post("/uploadVideo", async (req, res) => {
+  try {
+    // Check if file is uploaded
+    // if (!req.file) {
+    //   return res.status(400).send('No file uploaded');
+    // }
+
+    // File uploaded successfully, proceed with watermarking
+    const uploadedFile = 'suburbia-aerial.mp4';
+    const outputVideoPath = uploadedFile.replace('.mp4', '-watermarked.mp4');
+
+    // Wait for watermarking to complete
+    const videoLink = await watermarkVideo(uploadedFile, outputVideoPath)
+      .then((videoLink) => {
+        res.send({ status: "success", message: "OK", videoLink: videoLink });
+      });
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    res.status(500).send('An error occurred while uploading the video');
+  }
+});
+
 app.listen(3000, () => {
   console.log(
     "Server running...\n\nOpen http://localhost:3000 in your browser\n"
   );
 });
+
+// https://cloudinary.com/blog/video_uploads_with_cloudinary
