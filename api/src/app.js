@@ -230,9 +230,7 @@ app.post("/uploadVideo", async (req, res) => {
 
     // Wait for watermarking to complete
     const videoLink = await watermarkVideo(uploadedFile, outputVideoPath)
-      .then((videoLink) => {
-        res.send({ status: "success", message: "OK", videoLink: videoLink });
-      });
+    res.send({ status: "success", message: "OK", videoLink: videoLink });
   } catch (error) {
     console.error('Error uploading video:', error);
     res.status(500).send('An error occurred while uploading the video');
