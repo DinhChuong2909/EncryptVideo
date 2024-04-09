@@ -9,6 +9,13 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const fs = require("fs");
 
+// Set your AWS credentials (make sure to configure your AWS CLI or use environment variables)
+const awsAccessKeyId = process.env.AWS_ACCESS_KEY_ID;
+const awsSecretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+const bucketName = process.env.AWS_BUCKET_NAME;
+const videoFilePath = "./output_video_with_data.mp4";
+const region = process.env.AWS_REGION;
+
 // Initialize S3 client
 const s3 = new S3Client({
   region: region,
